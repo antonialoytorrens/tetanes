@@ -199,6 +199,7 @@ jobs:
         run: |
           sdkmanager "platforms;android-30"
           sdkmanager "build-tools;30.0.3"
+          sdkmanager "ndk;25.2.9519653"
       - name: Install Rust
         uses: dtolnay/rust-toolchain@nightly
         with:
