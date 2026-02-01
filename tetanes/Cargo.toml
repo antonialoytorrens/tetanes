@@ -13,6 +13,16 @@ keywords = ["nes", "emulator", "wasm"]
 exclude = ["/bin"]
 default-run = "tetanes"
 
+[package.metadata.android]
+build_targets = [
+  "aarch64-linux-android",
+  "armv7-linux-androideabi",
+  "i686-linux-android",
+  "x86_64-linux-android",
+]
+min_sdk_version = 26  # Minimum SDK with AAUDIO support
+target_sdk_version = 30
+
 [lib]
 name = "tetanes"
 crate-type = ["cdylib", "rlib"]
@@ -191,12 +201,3 @@ assets = [
   ],
 ]
 
-[package.metadata.android]
-build_targets = [
-  "aarch64-linux-android",
-  "armv7-linux-androideabi",
-  "i686-linux-android",
-  "x86_64-linux-android",
-]
-min_sdk_version = 26  # Minimum SDK with AAUDIO support
-target_sdk_version = 30
