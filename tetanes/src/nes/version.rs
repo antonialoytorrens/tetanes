@@ -152,7 +152,7 @@ impl Version {
         cfg!(all(not(target_arch = "wasm32"), not(target_os = "android")))
     }
 
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(any(target_arch = "wasm32", target_os = "android"))]
     pub const fn check_for_updates(
         &mut self,
         _tx: &crate::nes::event::NesEventProxy,

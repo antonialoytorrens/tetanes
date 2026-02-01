@@ -13,7 +13,7 @@ pub mod sys;
 pub mod thread;
 
 #[cfg(target_os = "android")]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use crate::nes::config::Config;
 
@@ -27,7 +27,7 @@ pub fn android_main(app: winit::platform::android::activity::AndroidApp) {
 
     let config = Config::default();
 
-    if let Err(err) = crate::nes::run(config, app) {
+    if let Err(err) = crate::nes::Nes::run(config, app) {
         log::error!("Failed to run application: {err:?}");
     }
 }
