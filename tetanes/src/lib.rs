@@ -22,7 +22,11 @@ pub fn android_main(app: winit::platform::android::activity::AndroidApp) {
     );
 
     if let Some(path) = app.internal_data_path() {
-        std::env::set_var("TETANES_ANDROID_DATA_DIR", path);
+        // SAFETY: providing a default data directory for Android.
+        // This is called before any other threads are spawned.
+        unsafe {
+            std::env::set_var("TETANES_ANDROID_DATA_DIR", path);
+        }
     }
 
     let config = Config::default();
