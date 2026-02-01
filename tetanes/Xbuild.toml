@@ -1,6 +1,6 @@
 [app]
 name = "TetaNES"
-icon = "tetanes/assets/tetanes_icon.png"
+icon = "assets/tetanes_icon.png"
 
 [android]
 manifest-package = "org.tetanes.emulator"
