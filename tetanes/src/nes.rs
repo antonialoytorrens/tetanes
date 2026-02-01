@@ -127,9 +127,20 @@ impl Nes {
     /// # Errors
     ///
     /// If event loop fails to build or run, then an error is returned.
-    pub fn run(cfg: Config) -> anyhow::Result<()> {
+    pub fn run(
+        cfg: Config,
+        #[cfg(target_os = "android")] app: winit::platform::android::activity::AndroidApp,
+    ) -> anyhow::Result<()> {
         // Set up window, events and NES state
-        let event_loop = EventLoop::<NesEvent>::with_user_event().build()?;
+        let mut builder = EventLoop::<NesEvent>::with_user_event();
+
+        #[cfg(target_os = "android")]
+        {
+            use winit::platform::android::EventLoopBuilderExtAndroid;
+            builder.with_android_app(app);
+        }
+
+        let event_loop = builder.build()?;
         let nes = Nes::new(cfg, &event_loop);
         cfg_if! {
             if #[cfg(target_arch = "wasm32")] {

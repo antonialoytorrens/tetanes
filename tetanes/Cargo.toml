@@ -13,6 +13,10 @@ keywords = ["nes", "emulator", "wasm"]
 exclude = ["/bin"]
 default-run = "tetanes"
 
+[lib]
+name = "tetanes"
+crate-type = ["cdylib", "rlib"]
+
 [[bin]]
 name = "tetanes"
 test = false
@@ -177,4 +181,12 @@ assets = [
     "usr/share/doc/tetanes/README",
     "644",
   ],
+]
+
+[package.metadata.android]
+build_targets = [
+  "aarch64-linux-android",
+  "armv7-linux-androideabi",
+  "i686-linux-android",
+  "x86_64-linux-android",
 ]

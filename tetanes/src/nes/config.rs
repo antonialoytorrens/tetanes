@@ -330,6 +330,11 @@ impl Config {
 
     #[must_use]
     pub fn default_config_dir() -> PathBuf {
+        #[cfg(target_os = "android")]
+        if let Ok(path) = std::env::var("TETANES_ANDROID_DATA_DIR") {
+            return PathBuf::from(path).join("config");
+        }
+
         dirs::config_local_dir().map_or_else(
             || PathBuf::from("config"),
             |dir| dir.join(DeckConfig::BASE_DIR),
@@ -338,6 +343,11 @@ impl Config {
 
     #[must_use]
     pub fn default_data_dir() -> PathBuf {
+        #[cfg(target_os = "android")]
+        if let Ok(path) = std::env::var("TETANES_ANDROID_DATA_DIR") {
+            return PathBuf::from(path).join("data");
+        }
+
         dirs::data_local_dir().map_or_else(
             || PathBuf::from("data"),
             |dir| dir.join(DeckConfig::BASE_DIR),
@@ -346,6 +356,11 @@ impl Config {
 
     #[must_use]
     pub fn default_picture_dir() -> PathBuf {
+        #[cfg(target_os = "android")]
+        if let Ok(path) = std::env::var("TETANES_ANDROID_DATA_DIR") {
+            return PathBuf::from(path).join("pictures");
+        }
+
         dirs::picture_dir().map_or_else(
             || PathBuf::from("pictures"),
             |dir| dir.join(DeckConfig::BASE_DIR),
@@ -354,6 +369,11 @@ impl Config {
 
     #[must_use]
     pub fn default_audio_dir() -> PathBuf {
+        #[cfg(target_os = "android")]
+        if let Ok(path) = std::env::var("TETANES_ANDROID_DATA_DIR") {
+            return PathBuf::from(path).join("music");
+        }
+
         dirs::audio_dir().map_or_else(
             || PathBuf::from("music"),
             |dir| dir.join(DeckConfig::BASE_DIR),

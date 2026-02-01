@@ -43,6 +43,7 @@ cfg_if! {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 fn main() -> anyhow::Result<()> {
     let log = logging::init();
     if let Err(err) = log {
@@ -54,3 +55,6 @@ fn main() -> anyhow::Result<()> {
 
     Nes::run(load_config()?)
 }
+
+#[cfg(target_os = "android")]
+fn main() {}

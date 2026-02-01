@@ -55,6 +55,9 @@ mod keybinds;
 pub mod lib;
 mod ppu_viewer;
 mod preferences;
+mod virtual_gamepad;
+
+use virtual_gamepad::VirtualGamepad;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Menu {
@@ -110,6 +113,7 @@ pub struct Gui {
     pub error: Option<String>,
     enable_auto_update: bool,
     dont_show_updates: bool,
+    virtual_gamepad: VirtualGamepad,
 }
 
 impl Gui {
@@ -167,6 +171,7 @@ impl Gui {
             error: None,
             enable_auto_update: false,
             dont_show_updates: false,
+            virtual_gamepad: VirtualGamepad::new(),
         }
     }
 
@@ -671,6 +676,7 @@ impl Gui {
         puffin::profile_function!();
 
         let button = Button::new("📂 Load ROM...").shortcut_text(cfg.shortcut(UiAction::LoadRom));
+        #[cfg(not(target_os = "android"))]
         if ui.add(button).clicked() {
             if self.loaded_rom.is_some() {
                 self.run_state = RunState::AutoPaused;
@@ -1324,6 +1330,8 @@ impl Gui {
                         });
                     });
                 }
+                #[cfg(target_os = "android")]
+                self.virtual_gamepad.ui(ui, tx);
             });
 
             let mut recording_labels = Vec::new();
