@@ -22,22 +22,23 @@ To build the APK for a specific architecture (e.g., `aarch64`):
 # Navigate to the package directory
 cd tetanes
 
-# Build release APK
-x build --release --target aarch64-linux-android
+# Build release APK (ARM64)
+x build --release --platform android --arch arm64
+
+# Build release APK (x86_64)
+x build --release --platform android --arch x64
 ```
 
 Supported targets:
-*   `aarch64-linux-android` (Most modern devices)
-*   `armv7-linux-androideabi` (Older devices)
-*   `x86_64-linux-android` (Emulators)
-*   `i686-linux-android` (Older emulators)
+*   `arm64` (aarch64-linux-android) - Most modern devices
+*   `x64` (x86_64-linux-android) - Emulators
 
 ## running
 
  connect your device or start an emulator, then run:
 
 ```bash
-x run --release --target aarch64-linux-android
+x run --release --platform android --arch arm64
 ```
 
 ## Troubleshooting

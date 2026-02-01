@@ -188,6 +188,14 @@ jobs:
       || inputs.tag)
       && (!inputs.os || inputs.os == 'android')
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            target: aarch64-linux-android
+          - arch: x64
+            target: x86_64-linux-android
     defaults:
       run:
         shell: bash
@@ -208,11 +216,11 @@ jobs:
         run: cargo install xbuild
       - name: Build APK
         working-directory: tetanes
-        run: x build --release --target ${{ matrix.target }}
+        run: x build --release --platform android --arch ${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
           name: android-${{ matrix.target }}-artifacts
-          path: tetanes/target/android/${{ matrix.target }}/release/apk/tetanes.apk
+          path: tetanes/target/android/release/apk/tetanes.apk
   upload-artifacts:
     name: Upload Artifacts
     runs-on: ubuntu-latest
