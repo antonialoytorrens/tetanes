@@ -1,14 +1,14 @@
 use crate::nes::{
-    action::Ui as UiAction,
-    event::{EmulationEvent, NesEvent, NesEventProxy, UiEvent},
+    event::{EmulationEvent, NesEvent, NesEventProxy, RendererEvent},
 };
 use egui::{
     Align2, Color32, FontId, Id, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui, Vec2,
-    epaint::{CircleShape, PathShape},
+    epaint::CircleShape,
 };
 use tetanes_core::input::{JoypadBtn, Player};
 use winit::event::ElementState;
 
+#[derive(Debug)]
 pub struct VirtualGamepad {
     pub active: bool,
 }
@@ -30,7 +30,7 @@ impl VirtualGamepad {
         }
 
         let rect = ui.max_rect();
-        let painter = ui.painter();
+        let painter = ui.painter().clone();
         let color = Color32::from_black_alpha(150);
         let stroke = Stroke::new(2.0, Color32::WHITE);
         let pressed_color = Color32::from_white_alpha(50);
@@ -49,18 +49,18 @@ impl VirtualGamepad {
         let ab_center = Pos2::new(right_x - 30.0, bottom_y);
 
         // D-pad
-        self.dpad(ui, painter, dpad_center, radius, color, stroke, event_proxy);
+        self.dpad(ui, &painter, dpad_center, radius, color, stroke, event_proxy);
 
         // A/B Buttons
         let a_pos = ab_center + Vec2::new(btn_radius * 1.5, 0.0);
         let b_pos = ab_center - Vec2::new(btn_radius * 1.5, 0.0);
         
         self.button(
-            ui, painter, "A", a_pos, btn_radius, color, stroke, pressed_color,
+            ui, &painter, "A", a_pos, btn_radius, color, stroke, pressed_color,
             JoypadBtn::A, event_proxy
         );
          self.button(
-            ui, painter, "B", b_pos, btn_radius, color, stroke, pressed_color,
+            ui, &painter, "B", b_pos, btn_radius, color, stroke, pressed_color,
             JoypadBtn::B, event_proxy
         );
 
@@ -70,11 +70,11 @@ impl VirtualGamepad {
         let select_pos = Pos2::new(center_x - 40.0, rect.max.y - 40.0);
         
         self.button(
-            ui, painter, "Start", start_pos, 25.0, color, stroke, pressed_color,
+            ui, &painter, "Start", start_pos, 25.0, color, stroke, pressed_color,
             JoypadBtn::Start, event_proxy
         );
         self.button(
-            ui, painter, "Sel", select_pos, 25.0, color, stroke, pressed_color,
+            ui, &painter, "Sel", select_pos, 25.0, color, stroke, pressed_color,
             JoypadBtn::Select, event_proxy
         );
 
@@ -85,7 +85,7 @@ impl VirtualGamepad {
         let menu_rect = Rect::from_center_size(menu_pos, Vec2::splat(menu_radius * 2.0));
         let menu_response = ui.interact(menu_rect, Id::new("menu_btn"), Sense::click());
         if menu_response.clicked() {
-             event_proxy.event(NesEvent::Ui(UiEvent::Action(crate::nes::action::Action::Ui(UiAction::ToggleMenubar))));
+             event_proxy.event(NesEvent::Renderer(RendererEvent::ShowMenubar(true)));
         }
         painter.add(Shape::Circle(CircleShape {
             center: menu_pos,
@@ -123,10 +123,10 @@ impl VirtualGamepad {
         // If hovered and dragged? egui handles "dragged" as holding pointer down and moving or staying within.
         
         if response.drag_started() {
-             let _ = event_proxy.send_event(NesEvent::Emulation(EmulationEvent::Joypad((Player::One, btn, ElementState::Pressed))));
+             event_proxy.event(NesEvent::Emulation(EmulationEvent::Joypad((Player::One, btn, ElementState::Pressed))));
         }
         if response.drag_stopped() {
-             let _ = event_proxy.send_event(NesEvent::Emulation(EmulationEvent::Joypad((Player::One, btn, ElementState::Released))));
+             event_proxy.event(NesEvent::Emulation(EmulationEvent::Joypad((Player::One, btn, ElementState::Released))));
         }
         
         if response.dragged() || response.is_pointer_button_down_on() {
