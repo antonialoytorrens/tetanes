@@ -193,6 +193,12 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v5
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android SDK Platform 30
+        run: |
+          sdkmanager "platforms;android-30"
+          sdkmanager "build-tools;30.0.3"
       - name: Install Rust
         uses: dtolnay/rust-toolchain@nightly
         with:
