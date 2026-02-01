@@ -200,11 +200,12 @@ jobs:
       - name: Install cargo-apk
         run: cargo install cargo-apk
       - name: Build APK
+        working-directory: tetanes
         run: cargo apk build --lib --release
       - uses: actions/upload-artifact@v4
         with:
           name: android-artifacts
-          path: target/release/apk/tetanes.apk
+          path: tetanes/target/release/apk/tetanes.apk
   upload-artifacts:
     name: Upload Artifacts
     runs-on: ubuntu-latest
