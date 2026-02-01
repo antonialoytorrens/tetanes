@@ -203,18 +203,16 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@nightly
         with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
-      - name: Install cargo-apk
-        run: cargo install cargo-apk
+          targets: ${{ matrix.target }}
+      - name: Install xbuild
+        run: cargo install xbuild
       - name: Build APK
         working-directory: tetanes
-        env:
-          package_metadata_android_min_sdk_version: 30
-        run: cargo apk build --lib --release
+        run: xbuild build --release --target ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
         with:
-          name: android-artifacts
-          path: tetanes/target/release/apk/tetanes.apk
+          name: android-${{ matrix.target }}-artifacts
+          path: tetanes/target/android/${{ matrix.target }}/release/apk/tetanes.apk
   upload-artifacts:
     name: Upload Artifacts
     runs-on: ubuntu-latest
