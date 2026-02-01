@@ -20,7 +20,7 @@ build_targets = [
   "i686-linux-android",
   "x86_64-linux-android",
 ]
-min_sdk_version = 29
+min_sdk_version = 30
 target_sdk_version = 33
 
 

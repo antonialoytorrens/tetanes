@@ -209,7 +209,7 @@ jobs:
       - name: Build APK
         working-directory: tetanes
         env:
-          package_metadata_android_min_sdk_version: 29
+          package_metadata_android_min_sdk_version: 30
         run: cargo apk build --lib --release
       - uses: actions/upload-artifact@v4
         with:

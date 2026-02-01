@@ -6,7 +6,7 @@ resolver = "2"
 members = ["tetanes", "tetanes-core", "tetanes-utils"]
 
 [workspace.metadata.android]
-min_sdk_version = 29
+min_sdk_version = 30
 target_sdk_version = 33
 
 [workspace.package]
