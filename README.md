@@ -6,4 +6,5 @@ Yes: I'm using Antigravity in order to have a quick **prototype** (emphasis on p
 
 However, I only know C, Python, TypeScript, Java and a bit of C++. Rust has always been in the back of my mind for a long time, maybe I will need to learn it beforehand and use this as an excuse to prove my newly acquired abilities! You know, maybe I'll clean it up and send a Pull Request if I feel like it.
 
-For the original README, see [README.orig.md](./README.orig.md).
+
+For Android build instructions, see [README.ANDROID.md](./README.ANDROID.md).
