@@ -24,14 +24,10 @@ cd tetanes
 
 # Build release APK (ARM64)
 x build --release --platform android --arch arm64
-
-# Build release APK (x86_64)
-x build --release --platform android --arch x64
 ```
 
 Supported targets:
 *   `arm64` (aarch64-linux-android) - Most modern devices
-*   `x64` (x86_64-linux-android) - Emulators
 
 ## running
 
