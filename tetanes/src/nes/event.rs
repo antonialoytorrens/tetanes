@@ -73,7 +73,7 @@ impl NesEventProxy {
 #[must_use]
 pub enum NesEvent {
     // For some reason accesskit_winit::Event isn't Clone
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
     AccessKit {
         window_id: WindowId,
         event: AccessKitWindowEvent,
@@ -85,7 +85,7 @@ pub enum NesEvent {
     Ui(UiEvent),
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
 #[derive(Debug, Clone)]
 pub enum AccessKitWindowEvent {
     InitialTreeRequested,
@@ -93,7 +93,7 @@ pub enum AccessKitWindowEvent {
     AccessibilityDeactivated,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
 impl From<accesskit_winit::Event> for NesEvent {
     fn from(event: accesskit_winit::Event) -> Self {
         use accesskit_winit::WindowEvent;

@@ -127,7 +127,7 @@ pub struct Renderer {
     redraw_tx: Arc<Mutex<NesEventProxy>>,
     pub(crate) gui: Rc<RefCell<Gui>>,
     pub(crate) ctx: egui::Context,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
     accesskit: accesskit_winit::Adapter,
     first_frame: bool,
     pub(crate) last_save_time: Instant,
@@ -242,7 +242,7 @@ impl Renderer {
 
         // Must be done before the window is shown for the first time, which is true here, because
         // first_frame is set to true below
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
         let accesskit =
             { accesskit_winit::Adapter::with_event_loop_proxy(&window, tx.inner().clone()) };
 
@@ -261,7 +261,7 @@ impl Renderer {
             tx,
             redraw_tx,
             ctx,
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
             accesskit,
             gui,
             first_frame: true,

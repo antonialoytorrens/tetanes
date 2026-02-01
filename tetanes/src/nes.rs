@@ -169,7 +169,7 @@ impl Nes {
     /// Create the NES instance.
     pub fn new(cfg: Config, event_loop: &EventLoop<NesEvent>) -> Self {
         let should_terminate = Arc::new(AtomicBool::new(false));
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
         // Minor issue if this fails, but not enough to terminate the program
         let _ = ctrlc::set_handler({
             let should_terminate = Arc::clone(&should_terminate);
