@@ -23,7 +23,7 @@ To build the APK for a specific architecture (e.g., `aarch64`):
 cd tetanes
 
 # Build release APK
-xbuild build --release --target aarch64-linux-android
+x build --release --target aarch64-linux-android
 ```
 
 Supported targets:
@@ -37,7 +37,7 @@ Supported targets:
  connect your device or start an emulator, then run:
 
 ```bash
-xbuild run --release --target aarch64-linux-android
+x run --release --target aarch64-linux-android
 ```
 
 ## Troubleshooting
