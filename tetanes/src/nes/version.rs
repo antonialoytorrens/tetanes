@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
 mod fetcher {
     use reqwest::blocking::Client;
     use std::cell::Cell;
@@ -149,7 +149,7 @@ impl Version {
     }
 
     pub const fn requires_updates(&self) -> bool {
-        cfg!(not(target_arch = "wasm32"))
+        cfg!(all(not(target_arch = "wasm32"), not(target_os = "android")))
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -160,7 +160,7 @@ impl Version {
     ) {
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
     pub fn check_for_updates(
         &mut self,
         tx: &crate::nes::event::NesEventProxy,

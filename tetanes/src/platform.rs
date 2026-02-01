@@ -67,8 +67,11 @@ macro_rules! feature {
         match $feature {
             // Wasm should never be able to exit
             AbortOnExit => cfg!(target_arch = "wasm32"),
-            Blocking | Filesystem | OsViewports => {
+            Blocking | Filesystem => {
                 cfg!(not(target_arch = "wasm32"))
+            }
+            OsViewports => {
+                cfg!(all(not(target_arch = "wasm32"), not(target_os = "android")))
             }
             ConstrainedViewport | ConsumePaste | ScreenReader => {
                 cfg!(target_arch = "wasm32")

@@ -82,7 +82,7 @@ impl Renderer {
                 }
                 _ => (),
             },
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
             NesEvent::AccessKit { window_id, event } => {
                 use crate::nes::event::AccessKitWindowEvent;
                 if let Some(viewport_id) = self.viewport_id_for_window(*window_id) {
@@ -130,7 +130,7 @@ impl Renderer {
             return Response::default();
         };
 
-        #[cfg(not(target_arch = "wasm32"))]
+        #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
         if let Some(window) = &viewport.window {
             tracing::trace!("process accesskit event: {event:?}");
             self.accesskit.process_event(window, event);

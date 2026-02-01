@@ -1198,7 +1198,7 @@ impl Renderer {
             if feature!(ScreenReader) && self.ctx.options(|o| o.screen_reader) {
                 platform::speak_text(&output.platform_output.events_description());
             }
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(all(not(target_arch = "wasm32"), not(target_os = "android")))]
             if let Some(update) = output.platform_output.accesskit_update.take() {
                 tracing::trace!("update accesskit: {update:?}");
                 self.accesskit.update_if_active(|| update);
