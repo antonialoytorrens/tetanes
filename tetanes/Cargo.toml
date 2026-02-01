@@ -152,6 +152,9 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 zip = { version = "4.0", default-features = false, features = ["deflate"] }
 
+[target.'cfg(target_os = "android")'.dependencies]
+winit = { version = "0.30", features = ["serde", "android-native-activity"] }
+
 [package.metadata.deb]
 extended-description = """
 `TetaNES` is a cross-platform emulator for the Nintendo Entertainment System
