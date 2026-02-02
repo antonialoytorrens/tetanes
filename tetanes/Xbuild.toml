@@ -1,9 +1,0 @@
-[app]
-name = "TetaNES"
-icon = "assets/tetanes_icon.png"
-
-[android]
-manifest-package = "org.tetanes.emulator"
-min-sdk-version = 30
-target-sdk-version = 33
-compile-sdk-version = 30
