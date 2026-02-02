@@ -219,7 +219,7 @@ jobs:
         run: cargo install xbuild
       - name: Build APK
         working-directory: tetanes
-        run: x build --release --platform android --arch ${{ matrix.arch }} --min-sdk-version 26
+        run: x build --release --platform android --arch ${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
           name: android-${{ matrix.target }}-artifacts
