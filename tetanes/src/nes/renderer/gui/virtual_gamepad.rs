@@ -1,5 +1,5 @@
 use crate::nes::{
-    event::{EmulationEvent, NesEvent, NesEventProxy, RendererEvent},
+    event::{EmulationEvent, NesEvent, NesEventProxy},
 };
 use egui::{
     Align2, Color32, FontId, Id, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui, Vec2,
@@ -8,27 +8,15 @@ use egui::{
 use tetanes_core::input::{JoypadBtn, Player};
 use winit::event::ElementState;
 
-#[derive(Debug)]
-pub struct VirtualGamepad {
-    pub active: bool,
-}
-
-impl Default for VirtualGamepad {
-    fn default() -> Self {
-        Self { active: true }
-    }
-}
+#[derive(Debug, Default)]
+pub struct VirtualGamepad;
 
 impl VirtualGamepad {
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 
     pub fn ui(&mut self, ui: &mut Ui, event_proxy: &NesEventProxy) {
-        if !self.active {
-            return;
-        }
-
         let rect = ui.max_rect();
         let painter = ui.painter().clone();
         let color = Color32::from_black_alpha(150);
@@ -68,7 +56,7 @@ impl VirtualGamepad {
         let center_x = rect.center().x;
         let start_pos = Pos2::new(center_x + 40.0, rect.max.y - 40.0);
         let select_pos = Pos2::new(center_x - 40.0, rect.max.y - 40.0);
-        
+
         self.button(
             ui, &painter, "Start", start_pos, 25.0, color, stroke, pressed_color,
             JoypadBtn::Start, event_proxy
@@ -78,22 +66,6 @@ impl VirtualGamepad {
             JoypadBtn::Select, event_proxy
         );
 
-        // Menu Button
-        // This is a UI toggle, not a joypad button
-        let menu_pos = Pos2::new(rect.center().x, 60.0);
-        let menu_radius = 30.0;
-        let menu_rect = Rect::from_center_size(menu_pos, Vec2::splat(menu_radius * 2.0));
-        let menu_response = ui.interact(menu_rect, Id::new("menu_btn"), Sense::click());
-        if menu_response.clicked() {
-             event_proxy.event(NesEvent::Renderer(RendererEvent::ShowMenubar(true)));
-        }
-        painter.add(Shape::Circle(CircleShape {
-            center: menu_pos,
-            radius: menu_radius,
-            fill: color,
-            stroke,
-        }));
-        painter.text(menu_pos, Align2::CENTER_CENTER, "Menu", FontId::proportional(menu_radius * 0.5), Color32::WHITE);
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -112,34 +84,32 @@ impl VirtualGamepad {
     ) {
         let rect = Rect::from_center_size(pos, Vec2::splat(radius * 2.0));
         let id = Id::new(label);
-        // drag allows holding
         let response = ui.interact(rect, id, Sense::drag());
-        
-        let mut final_color = color;
-        
-        // Logic: 
-        // If drag_started -> Pressed.
-        // If drag_released -> Released.
-        // If hovered and dragged? egui handles "dragged" as holding pointer down and moving or staying within.
-        
-        if response.drag_started() {
-             event_proxy.event(NesEvent::Emulation(EmulationEvent::Joypad((Player::One, btn, ElementState::Pressed))));
-        }
-        if response.drag_stopped() {
-             event_proxy.event(NesEvent::Emulation(EmulationEvent::Joypad((Player::One, btn, ElementState::Released))));
-        }
-        
-        if response.dragged() || response.is_pointer_button_down_on() {
-             final_color = pressed_color;
-        }
+        let is_down = response.is_pointer_button_down_on();
+
+        // Track state across frames so Pressed and Released are always in separate frames.
+        // Sending both in the same frame would cause the emulation to drain both events
+        // before clocking a NES frame, making the NES never see the press.
+        let state_id = Id::new(("btn_state", label));
+        ui.memory_mut(|mem| {
+            let was_down: bool = mem.data.get_temp(state_id).unwrap_or(false);
+            if is_down != was_down {
+                let state = if is_down { ElementState::Pressed } else { ElementState::Released };
+                event_proxy.event(NesEvent::Emulation(EmulationEvent::Joypad((
+                    Player::One,
+                    btn,
+                    state,
+                ))));
+                mem.data.insert_temp(state_id, is_down);
+            }
+        });
 
         painter.add(Shape::Circle(CircleShape {
             center: pos,
             radius,
-            fill: final_color,
+            fill: if is_down { pressed_color } else { color },
             stroke,
         }));
-        
         painter.text(
             pos,
             Align2::CENTER_CENTER,

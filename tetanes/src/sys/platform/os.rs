@@ -25,6 +25,9 @@ pub fn open_file_dialog_impl(
 /// Speak the given text out loud.
 pub const fn speak_text_impl(_text: &str) {}
 
+/// No-op on non-Android platforms.
+pub const fn hide_navigation_bar_impl() {}
+
 impl Initialize for Running {
     /// Initialize by loading a ROM from the command line, if provided.
     fn initialize(&mut self) -> anyhow::Result<()> {

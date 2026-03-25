@@ -1,0 +1,6 @@
+android:
+  manifest:
+    compile_sdk_version: 33
+    sdk:
+      min_sdk_version: 26
+      target_sdk_version: 33

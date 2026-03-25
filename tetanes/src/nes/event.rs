@@ -365,6 +365,14 @@ impl ApplicationHandler<NesEvent> for Nes {
 
         trace!("window event: {window_id:?} {event:?}");
 
+        // Re-apply immersive fullscreen on every focus gain, regardless of app state.
+        // setSystemUiVisibility must be called from within onWindowFocusChanged to stick,
+        // which is exactly what WindowEvent::Focused(true) represents in winit on Android.
+        #[cfg(target_os = "android")]
+        if let WindowEvent::Focused(true) = &event {
+            crate::platform::hide_navigation_bar();
+        }
+
         if let State::Running(state) = &mut self.state {
             state.window_event(event_loop, window_id, event);
         }
@@ -723,6 +731,11 @@ impl ApplicationHandler<NesEvent> for Running {
     }
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {
+        // Pause emulation while the surface is gone so the emulation thread
+        // does not spin needlessly and audio doesn't desync on resume.
+        if self.renderer.rom_loaded() && !self.run_state().paused() {
+            self.set_run_state(RunState::AutoPaused);
+        }
         if feature!(Suspend)
             && let Err(err) = self.renderer.drop_window()
         {

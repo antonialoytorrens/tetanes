@@ -200,7 +200,7 @@ impl InputConfig {
                 bindings[binding] = Some(input);
                 self.action_bindings.push(ActionBindings {
                     action,
-                    bindings: [Some(input), None, None],
+                    bindings,
                 });
             }
         }

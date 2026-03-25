@@ -31,6 +31,12 @@ pub fn speak_text(text: &str) {
     platform::speak_text_impl(text);
 }
 
+/// Hide the navigation/status bar on Android (no-op on other platforms).
+#[allow(clippy::missing_const_for_fn)]
+pub fn hide_navigation_bar() {
+    platform::hide_navigation_bar_impl();
+}
+
 pub mod renderer {
     use super::*;
     use crate::nes::{config::Config, event::Response, renderer::Renderer};

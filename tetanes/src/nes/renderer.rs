@@ -663,6 +663,10 @@ impl Renderer {
     }
 
     pub fn recreate_window(&mut self, event_loop: &ActiveEventLoop) {
+        // On Android the surface must be recreated after every Resumed event, even when
+        // embed_viewports is true, because the ANativeWindow backing the wgpu surface is
+        // invalidated when the screen turns off.
+        #[cfg(not(target_os = "android"))]
         if self.ctx.embed_viewports() {
             return;
         }
@@ -695,6 +699,10 @@ impl Renderer {
     }
 
     pub fn drop_window(&mut self) -> anyhow::Result<()> {
+        // On Android the surface must be explicitly dropped on Suspended, even when
+        // embed_viewports is true, because the ANativeWindow is invalidated and the
+        // wgpu surface must not outlive it.
+        #[cfg(not(target_os = "android"))]
         if self.ctx.embed_viewports() {
             return Ok(());
         }

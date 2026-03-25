@@ -675,9 +675,8 @@ impl Gui {
         #[cfg(feature = "profiling")]
         puffin::profile_function!();
 
-        let button = Button::new("📂 Load ROM...").shortcut_text(cfg.shortcut(UiAction::LoadRom));
         #[cfg(not(target_os = "android"))]
-        if ui.add(button).clicked() {
+        if ui.add(Button::new("📂 Load ROM...").shortcut_text(cfg.shortcut(UiAction::LoadRom))).clicked() {
             if self.loaded_rom.is_some() {
                 self.run_state = RunState::AutoPaused;
                 self.tx.event(EmulationEvent::RunState(self.run_state));

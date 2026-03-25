@@ -67,6 +67,9 @@ pub fn open_file_dialog_impl(
 }
 
 /// Speak the given text out loud.
+/// No-op on non-Android platforms.
+pub const fn hide_navigation_bar_impl() {}
+
 pub fn speak_text_impl(text: &str) {
     if text.is_empty() {
         return;
