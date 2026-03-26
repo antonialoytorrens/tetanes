@@ -1,18 +1,4 @@
-use crate::nes::config::Config;
-use anyhow::{Context, anyhow};
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use ringbuf::{
-    CachingCons, CachingProd, HeapRb,
-    producer::Producer,
-    traits::{Consumer, Observer, Split},
-};
-use std::{fs::File, io::BufWriter, iter, path::PathBuf, sync::Arc};
 use tetanes_core::time::Duration;
-use tracing::{debug, error, info, trace, warn};
-
-type SampleRb = Arc<HeapRb<f32>>;
-type SampleProducer = CachingProd<SampleRb>;
-type SampleConsumer = CachingCons<SampleRb>;
 
 /// Represents the state of the audio stream.
 #[derive(Debug)]
@@ -28,6 +14,33 @@ pub enum State {
     Stopped,
 }
 
+// ===== Real audio implementation (all non-Android platforms) =====
+
+#[cfg(not(target_os = "android"))]
+use crate::nes::config::Config;
+#[cfg(not(target_os = "android"))]
+use anyhow::{Context, anyhow};
+#[cfg(not(target_os = "android"))]
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+#[cfg(not(target_os = "android"))]
+use ringbuf::{
+    CachingCons, CachingProd, HeapRb,
+    producer::Producer,
+    traits::{Consumer, Observer, Split},
+};
+#[cfg(not(target_os = "android"))]
+use std::{fs::File, io::BufWriter, iter, path::PathBuf, sync::Arc};
+#[cfg(not(target_os = "android"))]
+use tracing::{debug, error, info, trace, warn};
+
+#[cfg(not(target_os = "android"))]
+type SampleRb = Arc<HeapRb<f32>>;
+#[cfg(not(target_os = "android"))]
+type SampleProducer = CachingProd<SampleRb>;
+#[cfg(not(target_os = "android"))]
+type SampleConsumer = CachingCons<SampleRb>;
+
+#[cfg(not(target_os = "android"))]
 #[derive(Debug)]
 #[must_use]
 pub enum CallbackMsg {
@@ -37,6 +50,7 @@ pub enum CallbackMsg {
     Record(bool),
 }
 
+#[cfg(not(target_os = "android"))]
 #[must_use]
 pub struct Audio {
     pub enabled: bool,
@@ -47,6 +61,7 @@ pub struct Audio {
     output: Option<Output>,
 }
 
+#[cfg(not(target_os = "android"))]
 impl std::fmt::Debug for Audio {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Audio")
@@ -59,6 +74,7 @@ impl std::fmt::Debug for Audio {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 impl Audio {
     /// Creates a new audio mixer.
     ///
@@ -274,6 +290,7 @@ impl Audio {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 #[must_use]
 struct Output {
     device: cpal::Device,
@@ -283,6 +300,7 @@ struct Output {
     mixer: Option<Mixer>,
 }
 
+#[cfg(not(target_os = "android"))]
 impl std::fmt::Debug for Output {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Audio")
@@ -293,6 +311,7 @@ impl std::fmt::Debug for Output {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 impl Output {
     fn create(
         host: &cpal::Host,
@@ -409,6 +428,7 @@ impl Output {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 #[must_use]
 pub(crate) struct Mixer {
     stream: cpal::Stream,
@@ -421,6 +441,7 @@ pub(crate) struct Mixer {
     recording: Option<(PathBuf, hound::WavWriter<BufWriter<File>>)>,
 }
 
+#[cfg(not(target_os = "android"))]
 impl std::fmt::Debug for Mixer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Audio")
@@ -435,6 +456,7 @@ impl std::fmt::Debug for Mixer {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 impl Mixer {
     fn start(
         device: &cpal::Device,
@@ -603,5 +625,80 @@ impl Mixer {
             "processed: {processed_len}, queued: {queued_len}, buffer len: {}",
             self.producer.occupied_len()
         );
+    }
+}
+
+// ===== No-op audio stub for Android =====
+
+#[cfg(target_os = "android")]
+#[derive(Debug)]
+#[must_use]
+pub struct Audio {
+    pub enabled: bool,
+    pub sample_rate: f32,
+    pub latency: Duration,
+    pub buffer_size: usize,
+}
+
+#[cfg(target_os = "android")]
+impl Audio {
+    pub fn new(enabled: bool, sample_rate: f32, latency: Duration, buffer_size: usize) -> Self {
+        Self {
+            enabled,
+            sample_rate,
+            latency,
+            buffer_size,
+        }
+    }
+
+    pub fn enabled(&self) -> bool {
+        false
+    }
+
+    pub fn set_enabled(&mut self, _enabled: bool) -> anyhow::Result<State> {
+        Ok(State::Disabled)
+    }
+
+    pub fn process(&mut self, _samples: &[f32]) {}
+
+    pub fn queued_time(&self) -> Duration {
+        Duration::default()
+    }
+
+    pub fn pause(&mut self, _paused: bool) {}
+
+    pub fn set_sample_rate(&mut self, sample_rate: f32) -> anyhow::Result<State> {
+        self.sample_rate = sample_rate;
+        Ok(State::Disabled)
+    }
+
+    pub fn set_buffer_size(&mut self, buffer_size: usize) -> anyhow::Result<State> {
+        self.buffer_size = buffer_size;
+        Ok(State::Disabled)
+    }
+
+    pub fn set_latency(&mut self, latency: Duration) -> anyhow::Result<State> {
+        self.latency = latency;
+        Ok(State::Disabled)
+    }
+
+    pub fn is_recording(&self) -> bool {
+        false
+    }
+
+    pub fn start_recording(&mut self) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    pub fn stop_recording(&mut self) -> anyhow::Result<Option<std::path::PathBuf>> {
+        Ok(None)
+    }
+
+    pub fn start(&mut self) -> anyhow::Result<State> {
+        Ok(State::Disabled)
+    }
+
+    pub fn stop(&mut self) -> State {
+        State::Disabled
     }
 }

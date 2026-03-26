@@ -298,6 +298,7 @@ impl State {
             cfg.audio.latency,
             cfg.audio.buffer_size,
         );
+        #[cfg(not(target_os = "android"))]
         if cfg.audio.enabled && audio.device().is_none() {
             tx.event(ConfigEvent::AudioEnabled(false));
             tx.event(UiEvent::Message((

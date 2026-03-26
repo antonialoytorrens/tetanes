@@ -6,5 +6,5 @@ icon = "assets/tetanes_icon.png"
 compile_sdk_version = 33
 
 [android.manifest.sdk]
-min_sdk_version = 26
+min_sdk_version = 24
 target_sdk_version = 33
