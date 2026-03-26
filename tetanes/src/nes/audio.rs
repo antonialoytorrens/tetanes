@@ -224,6 +224,15 @@ impl Audio {
         if self.enabled {
             if let Some(output) = &mut self.output {
                 output.start()?;
+                // Update sample rate in case a fallback config was used during start.
+                let actual_rate = output.config.sample_rate.0 as f32;
+                if (self.sample_rate - actual_rate).abs() > f32::EPSILON {
+                    info!(
+                        "audio: sample rate changed from {} to {} (fallback config)",
+                        self.sample_rate, actual_rate
+                    );
+                    self.sample_rate = actual_rate;
+                }
                 Ok(State::Started)
             } else {
                 Ok(State::NoOutputDevice)
@@ -300,25 +309,40 @@ impl Output {
         latency: Duration,
         buffer_size: usize,
     ) -> Option<Self> {
+        info!("audio: searching for output device...");
         let Some(device) = host.default_output_device() else {
             warn!("no available audio devices found");
             return None;
         };
-        debug!(
-            "device name: {}",
-            device
-                .name()
-                .as_ref()
-                .map(String::as_ref)
-                .unwrap_or("unknown")
-        );
-        let (config, sample_format) = match Self::choose_config(&device, sample_rate, buffer_size) {
-            Ok(config) => config,
-            Err(err) => {
-                warn!("failed to find a matching device configuration: {err:?}");
-                return None;
-            }
-        };
+        let device_name = device
+            .name()
+            .as_ref()
+            .map(String::as_ref)
+            .unwrap_or("unknown")
+            .to_string();
+        info!("audio: found device: {device_name}");
+
+        // Try ideal config first, fall back to device default.
+        let (config, sample_format) =
+            match Self::choose_config(&device, sample_rate, buffer_size) {
+                Ok(cfg) => cfg,
+                Err(err) => {
+                    warn!("audio: choose_config failed: {err:?}, trying device default");
+                    match device.default_output_config() {
+                        Ok(default) => {
+                            let fmt = default.sample_format();
+                            let mut cfg = cpal::StreamConfig::from(default);
+                            cfg.buffer_size = cpal::BufferSize::Default;
+                            (cfg, fmt)
+                        }
+                        Err(err2) => {
+                            warn!("audio: device default config also failed: {err2:?}");
+                            return None;
+                        }
+                    }
+                }
+            };
+        info!("audio: initial config: {config:?}, format: {sample_format:?}");
         Some(Self {
             device,
             config,
@@ -375,15 +399,61 @@ impl Output {
             })
             .ok_or_else(|| anyhow!("no supported audio configurations found"))?;
         let sample_format = chosen_config.sample_format();
-        let buffer_size = match chosen_config.buffer_size() {
-            cpal::SupportedBufferSize::Range { min, max } => {
-                desired_buffer_size.min(*max).max(*min)
-            }
-            cpal::SupportedBufferSize::Unknown => desired_buffer_size,
+        // On Android (AAudio), let the system choose the optimal buffer size.
+        // Fixed buffer sizes are not reliably supported across all devices/API levels.
+        #[cfg(target_os = "android")]
+        let buffer_size = cpal::BufferSize::Default;
+        #[cfg(not(target_os = "android"))]
+        let buffer_size = {
+            let size = match chosen_config.buffer_size() {
+                cpal::SupportedBufferSize::Range { min, max } => {
+                    desired_buffer_size.min(*max).max(*min)
+                }
+                cpal::SupportedBufferSize::Unknown => desired_buffer_size,
+            };
+            cpal::BufferSize::Fixed(size)
         };
         let mut config = cpal::StreamConfig::from(chosen_config);
-        config.buffer_size = cpal::BufferSize::Fixed(buffer_size);
+        config.buffer_size = buffer_size;
         Ok((config, sample_format))
+    }
+
+    /// Collect fallback audio configurations to try if the primary config fails.
+    /// Returns configs in priority order: device default, then each supported config
+    /// with default buffer size.
+    fn fallback_configs(device: &cpal::Device) -> Vec<(cpal::StreamConfig, cpal::SampleFormat)> {
+        let mut configs = Vec::new();
+
+        // 1. Device default config — most likely to work.
+        if let Ok(default) = device.default_output_config() {
+            let fmt = default.sample_format();
+            let mut cfg = cpal::StreamConfig::from(default);
+            cfg.buffer_size = cpal::BufferSize::Default;
+            configs.push((cfg, fmt));
+        }
+
+        // 2. Each supported config at its max sample rate with default buffer size.
+        if let Ok(supported) = device.supported_output_configs() {
+            for sc in supported {
+                let fmt = sc.sample_format();
+                let mut cfg = cpal::StreamConfig::from(sc.with_max_sample_rate());
+                cfg.buffer_size = cpal::BufferSize::Default;
+                configs.push((cfg, fmt));
+            }
+        }
+
+        // 3. Each supported config at its min sample rate with default buffer size.
+        if let Ok(supported) = device.supported_output_configs() {
+            for sc in supported {
+                let fmt = sc.sample_format();
+                let min_rate = sc.min_sample_rate();
+                let mut cfg = cpal::StreamConfig::from(sc.with_sample_rate(min_rate));
+                cfg.buffer_size = cpal::BufferSize::Default;
+                configs.push((cfg, fmt));
+            }
+        }
+
+        configs
     }
 
     fn start(&mut self) -> anyhow::Result<()> {
@@ -392,14 +462,41 @@ impl Output {
             return Ok(());
         }
 
-        info!("starting audio stream with config: {:?}", self.config);
-        self.mixer = Some(Mixer::start(
-            &self.device,
-            &self.config,
-            self.latency,
-            self.sample_format,
-        )?);
-        Ok(())
+        // Try primary config.
+        info!("audio: trying primary config: {:?}, format: {:?}", self.config, self.sample_format);
+        match Mixer::start(&self.device, &self.config, self.latency, self.sample_format) {
+            Ok(mixer) => {
+                info!("audio: stream started with primary config");
+                self.mixer = Some(mixer);
+                return Ok(());
+            }
+            Err(err) => {
+                warn!("audio: primary config failed: {err:?}, trying fallbacks...");
+            }
+        }
+
+        // Try each fallback config until one works.
+        let fallbacks = Self::fallback_configs(&self.device);
+        for (i, (config, sample_format)) in fallbacks.iter().enumerate() {
+            info!("audio: trying fallback {i}: {config:?}, format: {sample_format:?}");
+            match Mixer::start(&self.device, config, self.latency, *sample_format) {
+                Ok(mixer) => {
+                    info!("audio: stream started with fallback config {i}");
+                    self.config = config.clone();
+                    self.sample_format = *sample_format;
+                    self.mixer = Some(mixer);
+                    return Ok(());
+                }
+                Err(err) => {
+                    debug!("audio: fallback {i} failed: {err:?}");
+                }
+            }
+        }
+
+        Err(anyhow!(
+            "all audio configurations failed for device {:?}",
+            self.device.name().unwrap_or_default()
+        ))
     }
 
     fn stop(&mut self) {
@@ -448,8 +545,15 @@ impl Mixer {
         let sample_rate = config.sample_rate.0;
         let sample_latency =
             (latency.as_secs_f32() * sample_rate as f32 * channels as f32).ceil() as usize;
-        let processed_samples = Vec::with_capacity(2 * sample_latency);
-        let buffer = HeapRb::<f32>::new(2 * sample_latency);
+        // On Android the emulation thread can be preempted by the OS for 50-150ms at a time.
+        // Using a 6x ring buffer gives ~300ms of headroom (at 50ms latency) without increasing
+        // the target audio lag, since the emulation self-parks once queued_time > latency.
+        #[cfg(target_os = "android")]
+        let ring_capacity = 6 * sample_latency;
+        #[cfg(not(target_os = "android"))]
+        let ring_capacity = 2 * sample_latency;
+        let processed_samples = Vec::with_capacity(ring_capacity);
+        let buffer = HeapRb::<f32>::new(ring_capacity);
         let (producer, consumer) = buffer.split();
 
         let stream = match sample_format {

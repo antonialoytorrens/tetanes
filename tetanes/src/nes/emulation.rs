@@ -738,6 +738,9 @@ impl State {
         if let Err(err) = self.audio.start() {
             self.tx.event(ConfigEvent::AudioEnabled(false));
             self.on_error(err);
+        } else {
+            // A fallback audio config may have changed the sample rate.
+            self.control_deck.set_sample_rate(self.audio.sample_rate);
         }
         self.tx.event(RendererEvent::RomLoaded(rom));
         self.tx.event(RendererEvent::RequestRedraw {

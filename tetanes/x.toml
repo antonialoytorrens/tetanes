@@ -3,8 +3,8 @@ name = "TetaNES"
 icon = "assets/tetanes_icon.png"
 
 [android.manifest]
-compile_sdk_version = 33
+compile_sdk_version = 35
 
 [android.manifest.sdk]
 min_sdk_version = 26
-target_sdk_version = 33
+target_sdk_version = 35
